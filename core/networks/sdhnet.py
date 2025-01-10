@@ -11,9 +11,10 @@ class ContextNet(nn.Module):
 
         self.conv1 = nn.Conv3d(1, 16, kernel_size=3, stride=2, padding=1)
         self.conv2 = nn.Conv3d(16, 16, kernel_size=3, stride=1, padding=1)
+        #这部分的内容暂且未知
         self.conv3 = nn.Conv3d(16, 32, kernel_size=3, stride=2, padding=1)
         self.conv4 = nn.Conv3d(32, outputc, kernel_size=3, stride=1, padding=1)
-
+        #弱ReLU激活函数
         self.lrelu = nn.LeakyReLU(0.1, inplace=True)
 
     def forward(self, x):
@@ -24,11 +25,11 @@ class ContextNet(nn.Module):
 
         return x
 
-
+#提取网络部分
 class ExtractNet(nn.Module):
     def __init__(self):
         super(ExtractNet, self).__init__()
-
+        #向下采样过程
         self.conv1 = nn.Conv3d(1, 16, kernel_size=3, stride=2, padding=1)
         self.conv2 = nn.Conv3d(16, 32, kernel_size=3, stride=2, padding=1)
         self.conv3 = nn.Conv3d(32, 48, kernel_size=3, stride=2, padding=1)
@@ -37,6 +38,7 @@ class ExtractNet(nn.Module):
         self.lrelu = nn.LeakyReLU(0.1, inplace=True)
 
     def forward(self, x):
+        #依照流程图划分三个部分
         x_2x = self.lrelu(self.conv1(x))
         x_4x = self.lrelu(self.conv2(x_2x))
         x_8x = self.lrelu(self.conv3(x_4x))
@@ -44,7 +46,7 @@ class ExtractNet(nn.Module):
 
         return {'1/4': x_4x, '1/8': x_8x, '1/16': x_16x}
 
-
+#论文中图2部分
 class ConvGRU(nn.Module):
     def __init__(self, inputc, hidden_dim):
         super(ConvGRU, self).__init__()
@@ -62,6 +64,7 @@ class ConvGRU(nn.Module):
 
         z = torch.sigmoid(self.convz1(hx))
         r = torch.sigmoid(self.convr1(hx))
+        
         q = torch.tanh(self.convq1(torch.cat([r*h, x], dim=1)))
 
         h = (1-z) * h + z * q
